@@ -1,5 +1,18 @@
 from django.db import models
 
+class RepcoReport(models.Model):
+    filePath=models.CharField(max_length=100)
+    supplier=models.CharField(max_length=100)
+    maildate=models.CharField(max_length=100)
+    part_number= models.CharField(max_length=100)
+    description=models.CharField(max_length=255)
+    uom=models.CharField(max_length=50)
+    retail_incl_gst=models.CharField(max_length=10)
+    unit_price_excl_gst=models.CharField(max_length=10)
+    qty_supplied=models.CharField(max_length=10)
+    total_gst=models.CharField(max_length=10)
+    s=models.CharField(max_length=10)
+    total_incl_gst=models.CharField(max_length=10)
 
 class WurthReport(models.Model):
     filePath=models.CharField(max_length=100)
