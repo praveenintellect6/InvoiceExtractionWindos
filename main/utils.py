@@ -9,7 +9,7 @@ from datetime import datetime,timedelta
 import os
 from django.conf import settings
 import pdfplumber
-from .models  import InvoiceInfo,ColumnMapping,CaseModel,WurthReport,McGrathReport,YhiaustraliaReport,Supplier
+from .models  import InvoiceInfo,ColumnMapping,CaseModel,WurthReport,McGrathReport,YhiaustraliaReport,RepcoReport,Supplier
 from .service_repository import PurchaseReportServices
 import random
 from django.core.cache import cache
@@ -327,11 +327,13 @@ class MailAutomationClass:
                                         ttt = []
                                         mmm = []
                                         aaa=[]
+                                        rrr=[]
                                         invoice_format = ''
                                         wurth_start_index=False
                                         McGrath_start_index = False
                                         value = filepath
                                         yhiaustralia_start_index=False
+                                        Repco_start_index=False
                                         try:
                                             with pdfplumber.open(value) as pdf:
                                                 count = 0
@@ -347,6 +349,8 @@ class MailAutomationClass:
                                                                     invoice_format = "John McGrath"
                                                                 if "Aust Capital Terr Australia" in line:
                                                                     invoice_format = "YHI AUSTRALIA"
+                                                                if "PROVIDENT MOTORS" in line:
+                                                                    invoice_format = "Repco"  
                                                                 count += 1
                                                                 if "Delivery address Provident Motors Pty Ltd" in line:
                                                                     wurth_start_index=True
@@ -370,6 +374,14 @@ class MailAutomationClass:
                                                                     continue
                                                                 if yhiaustralia_start_index ==True:
                                                                     aaa.append(line)
+                                                                if "INCL GST EXCL GST TOTAL" in line:
+                                                                    Repco_start_index=True
+                                                                    continue
+                                                                if "PAYABLE" in line:
+                                                                    Repco_start_index=False
+
+                                                                if Repco_start_index ==True:
+                                                                    rrr.append(line)
                                                         else:
                                                             print(f"\n--- Page {i + 1}: No text found ---")
                                                     except Exception as e:
@@ -395,7 +407,7 @@ class MailAutomationClass:
                                             invoicedict=dict()
                                             invoicedict["mail_subject"]=msg.get("Subject", "")
                                             invoicedict["invoice_name"]=filename
-                                            invoicedict["supplier"]="WURTH"
+                                            invoicedict["supplier"]="John McGrath"
                                             # invoicedict["download_pdf"]=filename
                                             # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
                                             invoicelist.append(invoicedict)
@@ -407,12 +419,25 @@ class MailAutomationClass:
                                             invoicedict=dict()
                                             invoicedict["mail_subject"]=msg.get("Subject", "")
                                             invoicedict["invoice_name"]=filename
-                                            invoicedict["supplier"]="WURTH"
+                                            invoicedict["supplier"]="YHI AUSTRALIA"
                                             # invoicedict["download_pdf"]=filename
                                             # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
                                             invoicelist.append(invoicedict)
                                             cache.set('invoicelist', invoicelist)
                                             PurchaseReportServices.add_DataFrame_to_YhiaustraliaReport(data)
+                                        elif invoice_format =="Repco":
+                                            data=Invoice_Automation.convert_to_repco(rrr,value,fileorigin_full,day,subject_name,fileorigin)
+                                            invoicelist = cache.get('invoicelist')
+                                            invoicedict=dict()
+                                            invoicedict["mail_subject"]=msg.get("Subject", "")
+                                            invoicedict["invoice_name"]=filename
+                                            invoicedict["supplier"]="Repco"
+                                            # invoicedict["download_pdf"]=filename
+                                            # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+                                            invoicelist.append(invoicedict)
+                                            cache.set('invoicelist', invoicelist)
+                                            PurchaseReportServices.add_DataFrame_to_RepcoReport(data)
+
                                         else:
                                             data = None
                                         
@@ -420,6 +445,18 @@ class MailAutomationClass:
                                         wurth_record=WurthReport.objects.filter(maildate=day).values()
                                         John_McGrath_report=McGrathReport.objects.filter(maildate=day).values()
                                         YHI_report=YhiaustraliaReport.objects.filter(maildate=day).values()
+                                        Repco_report=RepcoReport.objects.filter(maildate=day).values()
+                                        if Repco_report.exists():
+                                            print("Repco_report exist")
+                                            supplier_name="Repco"
+                                            supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                                            col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                                            case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                                            col_map_list=[]
+                                            for i in col_map:
+                                                col_map_list.append(i)
+                                            status=generatereport(Repco_report,col_map_list,case_col,supplier_name)
+
                                         if wurth_record.exists():
                                             print("wurth_record exist")
                                             supplier_name="wurth"
@@ -852,7 +889,104 @@ class Invoice_Automation:
         #     print(f"Error saving invoice: {e}")
         # PurchaseReportServices.add_DataFrame_to_YhiaustraliaReport(df1)
         return df1
-
+    
+    @staticmethod
+    def convert_to_repco(rrr:list[str],filename:str,fileorigin:str,maildata:str,mail_subject:dict,fileorigin_scrap:str):
+        filename=convert_to_django_media_link(filename)
+        supplier_name="Repco"
+        rrr=rrr[:len(rrr)-1]
+        rrr=[i.split() for i in rrr]
+        rrr=[i[1:] for i in rrr]
+        part_number=[]
+        description=[]
+        retail_incl_gst=[]
+        uom=[]
+        # qty_ordered=[]
+        # back_ordered=[]
+        qty_supplied=[]
+        unit_price_excl_gst=[]
+        s=[]
+        total_gst=[]
+        total_incl_gst=[]
+        numbers=[]
+        for r in rrr:
+            found=[re.findall(r'\d+\.?\d*', i) for i in r]
+            found=[i for i in found if i]
+            numbers.append(found)
+        numeric_list = []
+        alphabet_list = []
+        for row in rrr:
+            row_numeric = []
+            row_alpha = []
+            for item in row:
+                clean_item = item.replace(',', '')
+                try:
+                    row_numeric.append(float(clean_item))
+                except ValueError:
+                    row_alpha.append(item)
+            numeric_list.append(row_numeric)
+            alphabet_list.append(row_alpha)
+        alphabet_list=[i[:len(i)-1] if "S" in i else i for i in alphabet_list]        
+        print("Numeric List:", numeric_list)
+        # alphabet_list_trim = []
+        # for row in alphabet_list:
+        #     if 'EACH' in row:
+        #         idx = row.index('EACH')
+        #         alphabet_list_trim.append(row[:idx + 1]) 
+        #     else:
+        #         alphabet_list_trim.append(row)
+        # alphabet_list=alphabet_list_trim
+        print("Alphabet List:", alphabet_list)
+        total_incl_gst=[i[len(i)-1] if len(i) >= 1 else None for i in numeric_list]
+        total_gst=[i[len(i)-2] if len(i) >= 2 else None for i in numeric_list]
+        s=[i[len(i)-3] if len(i) >= 3 else None for i in numeric_list]
+        unit_price_excl_gst=[i[len(i)-4] if len(i) >= 4 else None for i in numeric_list]
+        qty_supplied=[i[len(i)-5] if len(i) >= 5 else None for i in numeric_list]
+        retail_incl_gst=[i[len(i)-6] if len(i) >= 6 else None for i in numeric_list]
+        part_number = [i.pop(0) for i in alphabet_list]
+        uom=[i.pop(len(i)-1) for i in alphabet_list]
+        description=[' '.join(i) for i in alphabet_list]
+        print("total_incl_gst",total_incl_gst)
+        print("total_gst",total_gst)
+        print("s",s)
+        print("unit_price_excl_gst",unit_price_excl_gst)
+        print("qty_supplied",qty_supplied)
+        print("retail_incl_gst",retail_incl_gst)
+        print("part_number",part_number)
+        print("uom",uom)
+        print("description",description)
+        max_len = max(len(total_incl_gst),len(total_gst),len(unit_price_excl_gst),len(qty_supplied),len(part_number))
+        def pad(lst):
+            return lst + [""] * (max_len - len(lst))
+        df1=pd.DataFrame({
+                            # "filePath":[f'{filename}' for i  in range(len(pad(part_number)))],
+                            # "supplier":[f'{supplier_name}' for i in range(len(pad(part_number)))],
+                            # "maildate":[f'{maildata}' for i in range(len(pad(part_number)))],
+                            "part_number":pad(part_number),
+                            "description":pad(description),
+                            "uom":pad(uom),
+                            "retail_incl_gst":pad(retail_incl_gst),
+                            "unit_price_excl_gst":pad(unit_price_excl_gst),
+                            "qty_supplied":pad(qty_supplied),
+                            "total_gst":pad(total_gst),
+                            "s":pad(s),
+                            "total_incl_gst":pad(total_incl_gst)
+                            })
+        path_without_extension = os.path.splitext(fileorigin)[0]
+        input_path_without_extension=path_without_extension.replace('out_invoice', 'in_invoice')
+        invoicelist = cache.get('invoicelist')
+        invoicedict=dict()
+        filename_excel=os.path.splitext(filename)[0]
+        filename_excel=filename_excel.replace('in_invoice','out_invoice')
+        invoicedict["mail_subject"]=mail_subject[fileorigin_scrap]
+        invoicedict["invoice_name"]=fileorigin_scrap
+        invoicedict["supplier"]=supplier_name
+        invoicedict["download_pdf"]=filename
+        invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+        invoicelist.append(invoicedict)
+        cache.set('invoicelist', invoicelist)
+        df1.to_excel(f"{path_without_extension}.xlsx", index=False)
+        return df1
 
 class UtilityClasses:
     @staticmethod
@@ -865,11 +999,14 @@ class UtilityClasses:
         ttt = []
         mmm = []
         aaa=[]
+        rrr=[]
         invoice_format = ''
         wurth_start_index=False
         McGrath_start_index = False
         value = full_file_path
         yhiaustralia_start_index=False
+        Repco_start_index=False
+
         try:
             with pdfplumber.open(value) as pdf:
                 count = 0
@@ -885,6 +1022,8 @@ class UtilityClasses:
                                     invoice_format = "John McGrath"
                                 if "Aust Capital Terr Australia" in line:
                                     invoice_format = "YHI AUSTRALIA"
+                                if "PROVIDENT MOTORS" in line:
+                                    invoice_format = "Repco"   
                                 count += 1
                                 if "Delivery address Provident Motors Pty Ltd" in line:
                                     wurth_start_index=True
@@ -908,6 +1047,16 @@ class UtilityClasses:
                                     continue
                                 if yhiaustralia_start_index ==True:
                                     aaa.append(line)
+                                                                
+                                if "INCL GST EXCL GST TOTAL" in line:
+                                    Repco_start_index=True
+                                    continue
+                                    
+                                if "PAYABLE" in line:
+                                    Repco_start_index=False
+
+                                if Repco_start_index ==True:
+                                    rrr.append(line)
                         else:
                             print(f"\n--- Page {i + 1}: No text found ---")
                     except Exception as e:
@@ -921,6 +1070,8 @@ class UtilityClasses:
             data = Invoice_Automation.convert_to_McGrath_column(mmm, value, fileorigin_full, maildata,mail_subject,fileorigin)
         elif invoice_format =="YHI AUSTRALIA":
             data=Invoice_Automation.convert_to_yhiaustralia(aaa,value,fileorigin_full,maildata,mail_subject,fileorigin)
+        elif invoice_format == "Repco":
+            data=Invoice_Automation.convert_to_repco(rrr,value,fileorigin_full,maildata,mail_subject,fileorigin)
         else:
             data = None
         return data
@@ -1089,6 +1240,9 @@ def yhi_actualprice(report_i):
         unitprice=0.0
     report_i['actual_price']=unitprice
     return report_i
+
+def repco_actualprice(report_i):
+    pass
 
 
 def generatereport(report,col_map_list,case_col,supplier_name):

@@ -15,26 +15,27 @@ class MainConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'main'
     def ready(self):
-      if os.environ.get('RUN_MAIN') != 'true':
-          return
-      from .models import WurthReport, McGrathReport, YhiaustraliaReport
-      cache.set('report_num_columns',['trade_price','total_count','purchase_count','total_price','actual_price','profit',
-                                      'selling_price_exc_gst','gst','selling_price_inc_gst',],timeout=None)
-      cache.set('supplier_table_name',{"wurth": [field.name for field in WurthReport._meta.get_fields() if not field.many_to_many and not field.one_to_many],
-                                      "YHI AUSTRALIA": [field.name for field in YhiaustraliaReport._meta.get_fields() if not field.many_to_many and not field.one_to_many],
-                                      "John_McGrath":[field.name for field in McGrathReport._meta.get_fields() if not field.many_to_many and not field.one_to_many]
-                                      },
-                                      timeout=None)
-      cache.set('suppliertable_modelname',{"wurth":"WurthReport","YHI AUSTRALIA":"YhiaustraliaReport","John_McGrath":"McGrathReport"},timeout=None)
-      cache.set('invoicelist',[])
-      cache.set('invoicelist_date','')
-      from .utils import MailAutomationClass,UtilityClasses
-      from .service_repository import PurchaseReportServices
-      from .models import PurchaseReport
-      if settings.SCHEDULER_AUTOSTART:
-            scheduler = BackgroundScheduler()
-            scheduler.add_job( MailAutomationClass.mail_unseen_task, 'interval', seconds=5)
-            scheduler.start()
+        if os.environ.get('RUN_MAIN') != 'true':
+             return
+        from .models import WurthReport, McGrathReport, YhiaustraliaReport,RepcoReport
+        cache.set('report_num_columns',['trade_price','total_count','purchase_count','total_price','actual_price','profit',
+                                         'selling_price_exc_gst','gst','selling_price_inc_gst',],timeout=None)
+        cache.set('supplier_table_name',{"wurth": [field.name for field in WurthReport._meta.get_fields() if not field.many_to_many and not field.one_to_many],
+                                          "YHI AUSTRALIA": [field.name for field in YhiaustraliaReport._meta.get_fields() if not field.many_to_many and not field.one_to_many],
+                                          "John_McGrath":[field.name for field in McGrathReport._meta.get_fields() if not field.many_to_many and not field.one_to_many],
+                                          "Repco":[field.name for field in RepcoReport._meta.get_fields() if not field.many_to_many and not field.one_to_many]
+                                          },
+                                          timeout=None)
+        cache.set('suppliertable_modelname',{"wurth":"WurthReport","YHI AUSTRALIA":"YhiaustraliaReport","John_McGrath":"McGrathReport","Repco":"RepcoReport"},timeout=None)
+        cache.set('invoicelist',[])
+        cache.set('invoicelist_date','')
+        from .utils import MailAutomationClass,UtilityClasses
+        from .service_repository import PurchaseReportServices
+        from .models import PurchaseReport
+        if settings.SCHEDULER_AUTOSTART:
+                scheduler = BackgroundScheduler()
+                scheduler.add_job( MailAutomationClass.mail_unseen_task, 'interval', seconds=5)
+                scheduler.start()
 
     #   def backgroundtask():
     #       count=0

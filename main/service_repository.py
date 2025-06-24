@@ -1,10 +1,40 @@
-from .models import PurchaseReport,WurthReport,McGrathReport,YhiaustraliaReport
+from .models import PurchaseReport,WurthReport,McGrathReport,YhiaustraliaReport,RepcoReport
 import pandas as pd
 
 
 class PurchaseReportServices:
     def __init__(self):
         pass
+
+    @staticmethod          
+    def add_DataFrame_to_RepcoReport(df):
+        filePath=df['filePath']
+        supplier=df['supplier']
+        maildate=df['maildate']
+        part_number=df['part_number']
+        description=df['description']
+        uom=df['uom']
+        retail_incl_gst=df['retail_incl_gst']
+        unit_price_excl_gst=df['unit_price_excl_gst']
+        qty_supplied=df['qty_supplied']
+        total_gst=df['total_gst']
+        s=df['s']
+        total_incl_gst=df['total_incl_gst']
+        for i in range(len(supplier)):
+            report=RepcoReport(filePath=filePath[i],
+                                  supplier=supplier[i],
+                                  maildate=maildate[i],
+                                  part_number=part_number[i],
+                                  description=description[i],
+                                  uom=uom[i],
+                                  retail_incl_gst=retail_incl_gst[i],
+                                  unit_price_excl_gst=unit_price_excl_gst[i],
+                                  qty_supplied=qty_supplied[i],
+                                  total_gst=total_gst[i],
+                                  s=s[i],
+                                  total_incl_gst=total_incl_gst[i]
+                                )
+            report.save()
     
     @staticmethod          
     def add_DataFrame_to_WurthReport(df):

@@ -13,7 +13,7 @@ from datetime import datetime,date
 from django.conf import settings
 import os
 from .models import InvoiceInfo,PurchaseReport,Supplier,ColumnMapping,CaseModel,ScrappedDate
-from .models import WurthReport,McGrathReport,YhiaustraliaReport
+from .models import WurthReport,McGrathReport,YhiaustraliaReport,RepcoReport
 from .service_repository import PurchaseReportServices
 from main import service_repository
 from .utils import generatereport,generate_report_to_xlsl
@@ -36,6 +36,7 @@ def reporview(request):
 
 def generated_report(request):
     return render(request,"generated_report.html")
+
 
 @csrf_exempt
 def showunseen_mails(request):
@@ -97,9 +98,24 @@ def filecorrection(request):
                         YhiaustraliaReport.objects.filter(maildate=day).delete()
                         PurchaseReport.objects.filter(date=day,supplier="YHI AUSTRALIA").delete()
                         PurchaseReportServices.add_DataFrame_to_YhiaustraliaReport(sheets)
+                    elif sheets['supplier'].iloc[0]=="Repco":
+                        RepcoReport.objects.filter(maildate=day).delete()
+                        PurchaseReport.objects.filter(date=day, supplier="Repco").delete()
+                        PurchaseReportServices.add_DataFrame_to_RepcoReport(sheets)
                     wurth_record=WurthReport.objects.filter(maildate=day).values()
                     John_McGrath_report=McGrathReport.objects.filter(maildate=day).values()
                     YHI_report=YhiaustraliaReport.objects.filter(maildate=day).values()
+                    Repco_report=RepcoReport.objects.filter(maildate=day).values()
+                    if Repco_report.exists():
+                        print("Repco_report exist")
+                        supplier_name="Repco"
+                        supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                        col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                        case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                        col_map_list=[]
+                        for i in col_map:
+                            col_map_list.append(i)
+                        status=generatereport(Repco_report,col_map_list,case_col,supplier_name)
                     if wurth_record.exists():
                         print("wurth_record exist")
                         supplier_name="wurth"
