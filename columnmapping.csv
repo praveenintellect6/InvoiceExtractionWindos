@@ -1,0 +1,4 @@
+id,supplier_col,date_col,part_description_col,part_number_col,trade_price_col,total_count_col,purchase_count_col,total_price_col,actual_price_col,profit_col,selling_price_exc_gst_col,gst_col,selling_price_inc_gst_col
+8,wurth,maildate,item_description,itemno,Price_AUD,Price_Unit,Quantity,Ext_Net_Price_AUD,,,,,
+9,YHI AUSTRALIA,maildate,description,code,amount,quantity,quantity,amount,unit_price,,,,
+10,John_McGrath,maildate,description,part_Number,unit_List,ordered,supplied,total,,,,,

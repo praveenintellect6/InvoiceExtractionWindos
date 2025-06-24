@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>invoice pdf Extraction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #e6f0ff;
+            /* Light blue background */
+            color: #333;
+        }
+
+        header {
+            background-color: #004aad;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 2em;
+            display: flex;
+        }
+
+        .content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        input[type="date"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input[type="date"]:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        select.dropdownbox {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+            appearance: none;
+            /* removes default arrow styling (optional) */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        select.dropdownbox:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        .submit-button {
+            padding: 12px 24px;
+            background-color: #004aad;
+            color: #fff;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-button:hover {
+            background-color: #003380;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:active {
+            background-color: #00275b;
+            transform: scale(0.98);
+        }
+
+        .custom-blue {
+            background-color: #004aad;
+            color: white;
+            border: none;
+        }
+
+        .custom-blue:hover {
+            background-color: #003380;
+        }
+
+        .top-row {
+            display: flex;
+            justify-content: center;
+            /* center the whole row horizontally */
+            align-items: flex-start;
+            /* align items to the top */
+            gap: 20px;
+            /* space between blocks */
+            padding: 20px;
+            flex-wrap: wrap;
+            /* allow wrapping on small screens */
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+        }
+
+        thead {
+            background-color: #00275b;
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        a {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .custom-button {
+            display: inline-block;
+            padding: 10px 20px;
+            color: #00275b;
+            border: 2px solid #00275b;
+            background-color: transparent;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-button:hover {
+            background-color: #00275b;
+            color: white;
+        }
+
+        #loadingContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div>
+            Invoice PDF Extraction
+        </div>
+        <div>
+            <a href="{% url 'settingsview' %}" class="btn custom-blue" title="View Settings">
+                <i class="fas fa-cog"></i>
+            </a>
+        </div>
+    </header>
+    <!-- <div class="content">
+        <form method="POST" action="{% url 'show_mail_dates' %}">
+            {% csrf_token %}
+            <label for="inputdate">List Mail Data </label><br><br>
+            <input type="date" id="inputdate" name="inputdate" required>
+            <select class="dropdownbox" id="supplier_select" name="supplier_select">
+            <option value="">--Select Supplier--</option>
+            </select>
+            <button class="btn custom-blue" type="submit">Submit</button>
+        </form>
+    </div> -->
+    <div id="app">
+        <div class="top-row">
+            <!-- {% if invoices %}
+        <h3>Results for {{ selected_date }}</h3>
+        <table>
+            <tr>
+                <th>Date</th>
+                <th>Invoice URL</th>
+            </tr>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.maildate }}</td>
+                <td>
+                    <a href="{% url 'open_data_sheet' urldata=invoice.in_invoice_url %}">
+                        {{ invoice.in_invoice_url }}
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% elif selected_date %}
+        <p>No records found for {{ selected_date }}</p>
+        {% endif %}
+        <br><br> -->
+        
+            <div class="content">
+                <form @submit.prevent="collect_mail_invoice" method="POST" action="{% url 'collect_mail_invoice' %}">
+                    <label for="maildate">step1:Download Invoices</label><br><br>
+                    <input type="date" id="maildate" v-model="maildate" required>
+                    <button class="btn custom-blue" type="submit">Submit</button>
+                </form>
+                <br>
+                <br>
+                <p v-if="generate">[[ generate ]]</p>
+                <div v-if="generate" id="loadingContainer">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Scrapping Processing, please wait...</div>
+                </div>
+
+            </div>
+            <!-- <div class="content">
+                <label for="listmail"></label><br><br>
+                <a href="{% url 'reportview' %}"><button id="listmail" class="btn custom-blue" type="submit">Data
+                        correction</button></a>
+            </div> -->
+            <!-- <div class="content">
+                <label for="listmail"></label><br><br>
+                <a href="{% url 'convert_to_report' %}"><button class="btn custom-blue" type="submit">Convert Report
+                        </button></a>
+            </div> -->
+            <!-- <div class="content">
+                <label for="listmail"></label><br><br>
+                <a href="{% url 'generated_report' %}"><button class="btn custom-blue" type="submit">Generated
+                        Report</button></a>
+            </div> -->
+
+            <div class="content">
+                <label for="maildate">Download All Purchase records</label><br><br>
+                <a href="{% url 'make_all_preport' %}"><button class="btn custom-blue" type="submit">All
+                        Report</button></a>
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="content">
+                <table v-if="invoice_list && invoice_list.length">
+                    <thead>
+                        <tr>
+                            <th v-for="(value, key) in invoice_list[0]" :key="key">
+                                [[ key ]]
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(record, index) in invoice_list" :key="index">
+                            <td v-for="(value, key) in record" :key="key + index">
+                                <a v-if="key === 'download_pdf'" :href="value" target="_blank">Download pdf</a>
+                                <span v-else>
+                                    <a v-if="key === 'download_excel'" :href="value" target="_blank">Download excel</a>
+                                    <span v-else>[[ value ]]</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <br>
+
+                <div v-if="invoice_list && invoice_list.length">
+                    <button class="btn custom-blue" @click="downloadAllFiles" class="btn custom-blue">
+                        Download All Files
+                    </button>
+                    <a href="{% url 'convert_to_report' %}">
+                        <button class="btn custom-blue" type="submit">Generate
+                            Report</button>
+                    </a>
+                    <div class="row">
+                        <a @click="showTable = !showTable" class="custom-button">
+                            Do You Want To Re-upload Edited File?
+                        </a>
+
+                        <div class="content" v-if="showTable">
+                            <label for="excelUpload"></label><br><br>
+                            <div>
+                                <label for="excelUpload">Upload Excel Files (.xlsx only):</label><br><br>
+                                <input type="file" id="excelUpload" ref="fileInput" multiple accept=".xlsx"
+                                    @change="handleFileUpload" />
+                                <button @click="submitFiles" class="btn custom-blue">Upload Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <!-- <div>
+                    <label for="excelUpload">Upload Excel Files (.xlsx only):</label><br><br>
+                    <input type="file" id="excelUpload" ref="fileInput" multiple accept=".xlsx"
+                        @change="handleFileUpload" />
+                    <button @click="submitFiles" class="btn custom-blue">Upload</button>
+                </div>
+ -->
+
+            </div>
+        </div>
+
+    </div>
+    <!-- </div> stop vuejs  -->
+
+    <script>
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data: {
+                maildate: this.maildate,
+                invoice_list: [],
+                generate: "",
+                files: [],
+                showTable: false,
+            },
+            mounted() {
+            },
+            methods: {
+                handleFileUpload(event) {
+                    const selectedFiles = Array.from(event.target.files);
+                    // Filter files by .xlsx extension only
+                    this.files = selectedFiles.filter(file =>
+                        file.name.toLowerCase().endsWith('.xlsx')
+                    );
+                },
+                async submitFiles() {
+                    if (this.files.length === 0) {
+                        alert('Please select at least one .xlsx file.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    this.files.forEach(file => {
+                        formData.append('files', file);
+                    });
+                    try {
+                        const response = await fetch('http://127.0.0.1:8000/upload_excel/', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+                        alert(result.message || 'Files uploaded!');
+                    } catch (error) {
+                        alert('Upload failed!');
+                        console.error(error);
+                    }
+                },
+                collect_mail_invoice() {
+                    this.generate = "Scrapping Processing...."
+                    this.invoice_list = [];
+                    fetch('http://127.0.0.1:8000/collect_mail_invoice/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            maildata: this.maildate
+                        })
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                const confirmReupload = window.confirm("Mail date already scrapped. Do you want to Delete records?");
+                                if (confirmReupload) {
+                                    fetch("http://127.0.0.1:8000/delete_mailed_records/", {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ maildate: this.maildate })
+                                    }).then(res => {
+                                        if (!res.ok) {
+                                            throw new Error("Failed to delete records.");
+                                        }
+                                        return res.json();
+                                    })
+                                        .then(data => {
+
+                                            alert("Records deleted successfully!");
+                                            console.log("Delete response:", data);
+                                            this.generate = "";
+                                        })
+                                        .catch(error => {
+                                            alert("Delete failed: " + error.message);
+                                            console.error("Error deleting records:", error);
+                                        });
+
+
+                                }
+                                throw new Error("User chose not to reupload.");
+                            }
+                            else {
+                                return response.json();
+                            }
+                        })
+                        .then(data => {
+                            this.invoice_list = data.invoice_list;
+                            this.generate = "";
+                            console.log('Invoices downloaded:', this.invoice_list);
+                        })
+                        .catch(error => {
+                            this.generate = "";
+
+                            console.error('Error downloading invoices:', error);
+                        });
+                },
+                downloadAllFiles() {
+                    if (!this.invoice_list || !this.invoice_list.length) return;
+
+                    this.invoice_list.forEach(record => {
+                        for (const key in record) {
+                            const value = record[key];
+                            if (key === 'download_pdf' || key === 'download_excel') {
+                                const link = document.createElement('a');
+                                link.href = value;
+                                link.download = '';
+                                link.target = '_blank';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }
+                        }
+                    });
+                }
+            }
+        })
+
+        // <script>
+        //     $.ajax({
+        //         url: "{% url 'get_suppliers' %}",
+        //         method: "GET",
+        //         success: function (data) {
+        //             $.each(data, function (index, supplier) {
+        //                 $('#supplier_select').append(
+        //                     $('<option>', {
+        //                         value: supplier.id,
+        //                         text: supplier.supplier_name
+        //                     })
+        //                 );
+        //             });
+        //         },
+        //         error: function () {
+        //             alert('⚠️ Failed to load suppliers.');
+        //         }
+        //     });
+        // </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Editable Table</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #e6f0ff;
+            /* Light blue background */
+            color: #333;
+        }
+
+        header {
+            background-color: #004aad;
+            /* Deep blue */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .content {
+            padding: 40px;
+            text-align: center;
+        }
+
+        input[type="date"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input[type="date"]:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        select.dropdownbox {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+            appearance: none;
+            /* removes default arrow styling (optional) */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        select.dropdownbox:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        .submit-button {
+            padding: 12px 24px;
+            background-color: #004aad;
+            color: #fff;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-button:hover {
+            background-color: #003380;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:active {
+            background-color: #00275b;
+            transform: scale(0.98);
+        }
+
+        .custom-blue {
+            background-color: #004aad;
+            color: white;
+            border: none;
+        }
+
+        .custom-blue:hover {
+            background-color: #003380;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        textarea {
+            font-size: 14px;
+            padding: 6px 8px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            width: 100%;
+            resize: vertical;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        Invoice PDF Extraction
+    </header>
+    <div id="app">
+        <div class="content">
+            <form @submit.prevent="submitForm">
+                <label for="inputdate">List Mail Data</label><br><br>
+                <input type="date" id="inputdate" v-model="inputDate" required />
+                <select class="dropdownbox" id="supplier_select" v-model="supplier">
+                    <option value="">--Select Supplier--</option>
+                    <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
+                        [[ supplier.supplier_name ]]
+                    </option>
+                </select>
+                <button class="btn custom-blue" type="submit">Submit</button>
+            </form>
+        </div>
+        <div v-if="purchaseRecords && purchaseRecords.length" class="mt-4 content">
+            <!-- <h3 v-if="supplierTableName">Report of [[ supplierTableName ]]</h3> -->
+            <h3>[[ supplierTableName ]] Report</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th v-for="(value, key) in purchaseRecords[0]" :key="key">
+                            <span v-if="key !== 'id'">[[ key ]]</span>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(record, index) in purchaseRecords" :key="record.id">
+                        <td v-for="(value, key) in record" :key="key">
+                            <span v-if="key === 'id'"></span>
+                            <span v-else>
+                                <a v-if="key === 'filePath'" :href="record[key]" target="_blank">[[ record[key] ]]</a>
+                                <textarea v-else v-model="record[key]" :name="key" rows="3"
+                                    style="width: 100%; resize: vertical;"></textarea>
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn" @click="SaveRow(record)">Save</button>
+                            <button class="btn" style="background-color: #dc3545;"
+                                @click="deleteRow(record.id)">Delete</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="content" v-if="purchaseRecords && purchaseRecords.length">
+            <button class="btn" @click="Generate(purchaseRecords)">Generate Report</button>
+           
+        </div>
+
+        
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            delimiters: ['[[', ']]'],
+            data: {
+                inputDate: '',
+                supplier: '',
+                suppliers: [],
+                purchaseRecords: [],
+                supplierTableName: '',
+               
+            },
+            mounted() {
+                fetch('http://127.0.0.1:8000/get_suppliers/')
+                    .then(res => res.json())
+                    .then(data => {
+                        this.suppliers = data;
+                        console.log(this.suppliers);
+                    });
+            },
+            methods: {
+                Generate(purchaseRecords) {
+                    console.log('Generating report for records:', purchaseRecords);
+                    fetch('http://127.0.0.1:8000/generate_report_reportview/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                            // 'X-CSRFToken': this.csrfToken 
+                        },
+                        body: JSON.stringify({
+                            records: purchaseRecords,
+                            supplier_table_name: this.supplierTableName
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                           
+                            // console.log('Report generation response:', data);
+                            if (data.status === 'success') {
+                                alert(data.message); 
+                            } else if (data.status === 'error') {
+                                alert("Error: " + data.message); 
+                            } else {
+                                alert("Unexpected response");
+                            }
+                        })
+                        .catch(error => {
+                                console.error('Error generating report:', error);
+                                alert(error);
+                            });
+                },
+                SaveRow(record) {
+                    fetch('http://127.0.0.1:8000/save-record/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.csrfToken
+                        },
+                        body: JSON.stringify({
+                            ...record,
+                            supplier_table_name: this.supplierTableName
+                        })
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            console.log('Saved:', data);
+                        });
+                },
+
+                deleteRow(id) {
+                    if (confirm("Are you sure you want to delete this record?")) {
+                        fetch('http://127.0.0.1:8000/delete-record/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.csrfToken
+                            },
+                            body: JSON.stringify({
+                                id: id,
+                                supplier_table_name: this.supplierTableName
+                            })
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                console.log('Deleted:', data);
+                                this.purchaseRecords = this.purchaseRecords.filter(rec => rec.id !== id);
+                            });
+                    }
+                },
+                submitForm() {
+                    const formData = new URLSearchParams();
+                    formData.append('inputdate', this.inputDate);
+                    formData.append('supplier_select', this.supplier);
+                    fetch("http://127.0.0.1:8000/show_mail_dates/", {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log(data);
+                            this.supplierTableName = data.supplier_table_name;
+                            this.purchaseRecords = data.purchase_records;
+                        })
+                        .catch(error => console.error(error));
+                },
+                changeMessage: function () {
+                    this.message = 'The message has been updated!';
+                },
+                fetchBooks() {
+                    fetch("http://127.0.0.1:8000/showdata/")
+                        .then(response => {
+                            return response.json();
+                        })
+                        .then(data => {
+                            this.books = data;
+                            console.log(this.book);
+                            this.loading = false;
+                        }).catch(error => {
+                            console.error('Error fetching books:', error);
+                            this.error = 'Failed to load books. Please try again.';
+                            this.loading = false; // Stop loading state even on error
+                        })
+                },
+                sendRowData(book) {
+                    fetch("http://127.0.0.1:8000/save_row/", {
+                        method: "POST",
+                        body: JSON.stringify(book)
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error("Failed to send row data");
+                            return response.json();
+                        })
+                        .then(data => {
+                            alert(data);
+                        })
+                        .catch(error => {
+                            console.error(error)
+                        })
+
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>

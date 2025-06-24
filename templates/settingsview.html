@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>invoice settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #e6f0ff;
+            /* Light blue background */
+            color: #333;
+        }
+
+        header {
+            background-color: #004aad;
+            /* Deep blue */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .content {
+            padding-top: 20px;
+            /* padding: 10px; */
+            text-align: center;
+        }
+
+        .leftcontent {
+            padding-top: 10px;
+            /* padding: 10px; */
+            text-align: left;
+        }
+
+
+        input[type="date"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input[type="date"]:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        .submit-button {
+            padding: 12px 24px;
+            background-color: #004aad;
+            color: #fff;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-button:hover {
+            background-color: #003380;
+            transform: translateY(-2px);
+        }
+
+        .submit-button:active {
+            background-color: #00275b;
+            transform: scale(0.98);
+        }
+
+        .custom-blue {
+            background-color: #004aad;
+            color: white;
+            border: none;
+        }
+
+        .custom-blue:hover {
+            background-color: #003380;
+        }
+
+        .col-box {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+
+        #add_supplier_view {
+            display: none;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* space between label and input */
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            min-width: 80px;
+            /* adjust as needed */
+            font-weight: bold;
+        }
+
+        .form-group input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        .form-group button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+
+        .dropdownbox {
+            text-align: center;
+            width: 90%;
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #333;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s, box-shadow 0.3s;
+            appearance: none;
+            /* Remove default arrow in some browsers */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .dropdownbox:focus {
+            border-color: #007BFF;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+
+        .form-group-inline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* spacing between label and select */
+            margin-bottom: 10px;
+        }
+
+        .form-group-inline label {
+            min-width: 80px;
+            /* adjust width as needed */
+            font-weight: bold;
+        }
+
+
+        .form-container label {
+            text-align: right;
+            font-weight: bold;
+            padding-top: 6px;
+        }
+
+        .form-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .form-row label {
+            width: 200px;
+            /* Set a fixed width for alignment */
+            font-weight: 500;
+            margin-right: 10px;
+        }
+
+        .dropdownboxsmall {
+            flex: 1;
+            padding: 6px;
+            border: 2px solid #004aad;
+            border-radius: 8px;
+            background-color: #f0f8ff;
+            color: #004aad;
+            font-size: 1rem;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        .dropdownboxsmall:focus {
+            border-color: #002f6c;
+            background-color: #e6f0ff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            /* space between inputs */
+            flex-wrap: wrap;
+            /* wrap on small screens */
+            justify-content: center;
+            /* center horizontally */
+            margin-top: 10px;
+        }
+
+        .input-group input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            min-width: 150px;
+            /* makes all inputs reasonably wide */
+        }
+
+        .container-box {
+            display: inline-block;
+            /* Shrinks to fit content */
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f8f8f8;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+        }
+
+        table#myTable {
+            width: auto;
+            font-size: 14px;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        #myTable th,
+        #myTable td {
+            padding: 4px 8px;
+            text-align: center;
+        }
+
+        #myTable input[type="text"] {
+            width: 100px;
+            padding: 2px 4px;
+            font-size: 13px;
+        }
+
+        #myTable input::placeholder {
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        Invoice Settings
+    </header>
+    <div class="content" id="report_num_columns" style="display: none;">
+        <h6>Report number Columns:</h6>
+        <div>
+            {% for col in report_num_columns %}
+            <span class="col-box">{{ col }}</span>
+            {% empty %}
+            <div>No columns found in cache.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="content">
+        <a href=""><button id="add_supplier" class="btn custom-blue" type="submit">ADD New Supplier</button></a>
+        <a href=""><button id="add_calculations" class="btn custom-blue" type="submit">Edit Case</button></a>
+        <a href=""><button id="column_mapping" class="btn custom-blue" type="submit">Column Mapping</button></a>
+
+        <!-- column mapping field start -->
+        <div id="column_mapping_view" style="display: none;" class="content">
+            <form class="form-container">
+                <label for="column_supplier_select"></label>
+                <select class="dropdownbox" id="column_supplier_select" name="column_supplier_select">
+                </select>
+            </form>
+
+            <div class="content" style="text-align: center; padding: 20px;">
+                <table id="reportTable" style="margin: 0 auto; border-collapse: collapse; width: 90%; display: none;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>Supplier</th>
+                            <th>Date</th>
+                            <th>Part Description</th>
+                            <th>Part Number</th>
+                            <th>Trade Price</th>
+                            <th>Total Count</th>
+                            <th>Purchase Count</th>
+                            <th>Total Price</th>
+                            <th>Actual Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <!-- Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+
+
+            <div class="content">
+                <form class="form-container">
+                    <div class="form-row">
+                        <label for="supplier_col">Supplier:</label>
+                        <select class="dropdownboxsmall" id="supplier_col" name="supplier_col"></select>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">date:</label>
+                        <select class="dropdownboxsmall" id="date_col" name="date_col"></select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="supplier_col">part_description:</label>
+                        <select class="dropdownboxsmall" id="part_description_col" name="part_description_col"></select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="supplier_col">part_number:</label>
+                        <select class="dropdownboxsmall" id="part_number_col" name="part_number_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">trade_price:</label>
+                        <select class="dropdownboxsmall" id="trade_price_col" name="trade_price_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">total_count:</label>
+                        <select class="dropdownboxsmall" id="total_count_col" name="total_count_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">purchase_count:</label>
+                        <select class="dropdownboxsmall" id="purchase_count_col" name="purchase_count_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">total_price:</label>
+                        <select class="dropdownboxsmall" id="total_price_col" name="total_price_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">actual_price:</label>
+                        <select class="dropdownboxsmall" id="actual_price_col" name="actual_price_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col"> profit:</label>
+                        <select class="dropdownboxsmall" id="profit_col" name="profit_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">selling_price_exc_gst:</label>
+                        <select class="dropdownboxsmall" id="selling_price_exc_gst_col"
+                            name="selling_price_exc_gst_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">gst:</label>
+                        <select class="dropdownboxsmall" id="gst_col" name="gst_col">
+                        </select><br>
+                    </div>
+                    <div class="form-row">
+                        <label for="supplier_col">selling_price_inc_gst:</label>
+                        <select class="dropdownboxsmall" id="selling_price_inc_gst_col"
+                            name="selling_price_inc_gst_col">
+                        </select><br>
+                    </div>
+                    <button id="add_column_mapping" class="btn custom-blue" type="submit">submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- supplier adding field start -->
+    <div id="add_supplier_view" style="display: none;" class="content">
+        <form id="add_supplier" class="form-container">
+            <label for="supplier_name"><input type="text" id="supplier_name" name="supplier_name"
+                    placeholder="Enter supplier name" required></label>
+            <button id="add_new_supplier_button" class="btn custom-blue" type="submit">Add Supplier</button>
+        </form>
+    </div>
+
+    <!-- calculation case field start-->
+    <div id="add_calculations_view" style="display: none;" class="content">
+
+
+        <div class="container-box">
+
+            <label for="supplier_select"></label>
+            <select class="dropdownbox" id="supplier_select" name="supplier_select">
+                <option value="">--Select Supplier--</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}">{{ supplier.supplier_name }}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+
+            <!-- <label for="case_select"></label>
+                <select class="dropdownbox" id="case_select" name="case">
+                </select> -->
+            <table id="myTable" border="1" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>min</th>
+                        <th>max</th>
+                        <th>actual_price</th>
+                        <th>Profit</th>
+                        <th>Selling Price (Excl. GST)</th>
+                        <th>GST (%):</th>
+                        <th>Selling Price (Incl. GST):</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+                <tr>
+                    <form>
+                        <th> <input type="number" id="minvalue" name="minvalue" placeholder="Min Value"></th>
+                        <th><input type="number" id="maxvalue" name="maxvalue" placeholder="Max Value"></th>
+                        <th><input type="text" id="actual_price" name="actual_price" placeholder="actual_price">
+                        </th>
+                        <th><input type="text" id="profit" name="profit" placeholder="Profit"></th>
+                        <th><input type="text" id="selling_price_exc_gst" name="selling_price_exc_gst"
+                                placeholder="selling_price_exc_gst"></th>
+                        <th><input type="text" id="gst" name="gst" placeholder="GST"></th>
+                        <th><input type="text" id="selling_price_inc_gst" name="selling_price_inc_gst"
+                                placeholder="Price Incl. GST"></th>
+                        <th><button id="add_new_case_button" class="btn custom-blue">add new</button></th>
+                    </form>
+                </tr>
+            </table>
+
+            <!-- <div class="input-group">
+                    <input type="text" id="minvalue" name="minvalue" placeholder="Min Value">
+                    <input type="text" id="maxvalue" name="maxvalue" placeholder="Max Value">
+                    <input type="text" id="profit" name="profit" placeholder="Profit">
+                    <input type="text" id="selling_price_exc_gst" name="selling_price_exc_gst"
+                        placeholder="Price Excl. GST">
+                    <input type="text" id="gst" name="gst" placeholder="GST">
+                    <input type="text" id="selling_price_inc_gst" name="selling_price_inc_gst"
+                        placeholder="Price Incl. GST">
+                </div> -->
+
+            <!-- <br><br>
+                <div class="form-group">
+                    <label for="case_name">case name:</label><input type="text" name="case_name" id="case_name"
+                        step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="condition">write condition:</label><input type="text" name="condition" id="condition"
+                        step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="profit">Profit:</label> <input type="text" name="profit" id="profit" step="0.01"
+                        required>
+                </div>
+                <div class="form-group">
+                    <label for="selling_price_exc_gst">Selling Price (Excl. GST):</label>
+                    <input type="text" name="selling_price_exc_gst" id="selling_price_exc_gst" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="gst">GST (%):</label>
+                    <input type="text" name="gst" id="gst" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="selling_price_inc_gst">Selling Price (Incl. GST):</label>
+                    <input type="text" name="selling_price_inc_gst" id="selling_price_inc_gst" step="0.01" required>
+                </div>
+                <div>
+                    <button type="submit" class="btn custom-blue">Submit</button>
+                    <button id="delete_Case" class="btn custom-blue">delete</button>
+                </div> -->
+
+        </div>
+    </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+            // edit case filed------------------------------------------------------------------
+            // edit case filed--------------------------delete table case-------------------------------------------
+            $(document).on('click', '.delete_Case', function () {
+                const row = $(this).closest('tr');
+                const caseData = {
+                    supplier_id: $('#supplier_select').val(),
+                    minvalue: row.find('td:eq(0)').text(),
+                    maxvalue: row.find('td:eq(1)').text(),
+                    actual_price: row.find('td:eq(2)').text(),
+                    profit: row.find('td:eq(3)').text(),
+                    selling_price_exc_gst: row.find('td:eq(4)').text(),
+                    gst: row.find('td:eq(5)').text(),
+                    selling_price_inc_gst: row.find('td:eq(6)').text()
+                };
+                deleteCase(caseData, row);
+            });
+
+            function deleteCase(caseData, rowElement) {
+                if (!confirm("Are you sure you want to delete this case?")) return;
+                $.ajax({
+                    url: "{% url 'delete_case' %}",
+                    method: 'POST',
+                    headers: {
+                        // 'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                    },
+                    data: caseData,
+                    success: function (response) {
+                        if (response.success) {
+                            rowElement.remove();
+                            alert("Case deleted successfully.");
+                        } else {
+                            alert("Failed to delete case.");
+                        }
+                    },
+                    error: function () {
+                        alert("Error deleting case.");
+                    }
+                });
+            }
+
+            // edit case filed------------------------------------show table cases------------------------------
+            $('#supplier_select').on('change', function () {
+                const supplierId = $(this).val();
+                $('#myTable').show();
+                if (supplierId) {
+                    $.ajax({
+                        url: "{% url 'showcases' %}",
+                        type: 'POST',
+                        data: {
+                            supplier_id: supplierId,
+                            // csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                        },
+                        success: function (response) {
+                            $('#myTable').show();
+                            $('#tableBody').empty();
+                            response.casedata.forEach(function (item) {
+                                $('#tableBody').append(`
+                        <tr>
+                            <td>${item.minvalue}</td>
+                            <td>${item.maxvalue}</td>
+                            <td>${item.actual_price}</td>
+                            <td>${item.profit}</td>
+                            <td>${item.selling_price_exc_gst}</td>
+                            <td>${item.gst}</td>
+                            <td>${item.selling_price_inc_gst}</td>
+                            <td><button class="delete_Case btn custom-blue" >delete</button></td>
+                        </tr>
+                    `);
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('AJAX Error:', error);
+                        }
+                    });
+                } else {
+                    $('#myTable').show();
+                }
+            });
+            // edit case filed---------------------------------add new case---------------------------------
+            $('#add_new_case_button').on('click', function (e) {
+                e.preventDefault();
+                const data = {
+                    supplier_id: $('#supplier_select').val(),
+                    minvalue: $('#minvalue').val(),
+                    maxvalue: $('#maxvalue').val(),
+                    actual_price: $('#actual_price').val(),
+                    profit: $('#profit').val(),
+                    selling_price_exc_gst: $('#selling_price_exc_gst').val(),
+                    gst: $('#gst').val(),
+                    selling_price_inc_gst: $('#selling_price_inc_gst').val(),
+                };
+                $.ajax({
+                    url: "{% url 'add_case_data' %}",
+                    method: "POST",
+                    data: data,
+                    success: function (response) {
+                        alert("Data added successfully!");
+                        const supplierId = $('#supplier_select').val();
+                        if (supplierId) {
+                            $.ajax({
+                                url: "{% url 'showcases' %}",
+                                type: 'POST',
+                                data: {
+                                    supplier_id: supplierId,
+                                    // csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                                },
+                                success: function (response) {
+                                    $('#myTable').show();
+                                    $('#tableBody').empty();
+                                    response.casedata.forEach(function (item) {
+                                        $('#tableBody').append(`
+                                                            <tr>
+                                                                <td>${item.minvalue}</td>
+                                                                <td>${item.maxvalue}</td>
+                                                                <td>${item.actual_price}</td>
+                                                                <td>${item.profit}</td>
+                                                                <td>${item.selling_price_exc_gst}</td>
+                                                                <td>${item.gst}</td>
+                                                                <td>${item.selling_price_inc_gst}</td>
+                                                                <td><button class="delete_Case btn custom-blue" >delete</button></td>
+                                                            </tr>
+                                                        `);
+                                    });
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error('AJAX Error:', error);
+                                }
+                            });
+                        }
+
+                    },
+                    error: function (xhr) {
+                        alert("Error adding data.");
+                        console.error(xhr.responseText);
+                    }
+                });
+            })
+            //edit case -------------------------delete case--------------------------------
+            $.ajax({
+                url: "{% url 'get_suppliers' %}",
+                method: "GET",
+                success: function (data) {
+                    $.each(data, function (index, supplier) {
+                        $('#supplier_select').append(
+                            $('<option>', {
+                                value: supplier.id,
+                                text: supplier.supplier_name
+                            })
+                        );
+                    });
+                },
+                error: function () {
+                    alert('⚠️ Failed to load suppliers.');
+                }
+            });
+
+            // edit case filed------------------------------------------------------------------
+            // $.ajax({
+            //     url: "{% url 'get_suppliers' %}",
+            //     method: "GET",
+            //     success: function (data) {
+            //         $.each(data, function (index, supplier) {
+            //             $('#supplier_select').append(
+            //                 $('<option>', {
+            //                     value: supplier.id,
+            //                     text: supplier.supplier_name
+            //                 })
+            //             );
+            //         });
+            //     },
+            //     error: function () {
+            //         alert('⚠️ Failed to load suppliers.');
+            //     }
+            // });
+
+            // column mapping field------------------------------------------------------------------- 
+            $('#column_mapping').on('click', function (e) {
+                e.preventDefault();
+                $('#add_calculations_view').hide();
+                $('#add_supplier_view').hide();
+                $('#column_mapping_view').show();
+                $("#report_num_columns").hide();
+                $.ajax({
+                    url: "{% url 'get_suppliers_column_map' %}",
+                    type: "GET",
+                    success: function (response) {
+                        const dropdown = $('#column_supplier_select');
+                        dropdown.empty();
+                        dropdown.append('<option value="">--Select Supplier--</option>');
+                        response.forEach(function (supplier) {
+                            dropdown.append('<option value="' + supplier.id + '">' + supplier.supplier_name + '</option>');
+                        });
+                    },
+                    error: function () {
+                        alert('Failed to load suppliers');
+                    }
+                });
+            });
+
+            // column mapping field------------------------------------------------------------------- 
+            $('#column_supplier_select').on('change', function () {
+                const selectedValue = $(this).val();
+                if (selectedValue === "") {
+                    $('#supplier_col,#date_col,#part_description_col,#part_number_col,#trade_price_col,#total_count_col,#purchase_count_col,#total_price_col,#actual_price_col,#profit_col,#selling_price_exc_gst_col,#gst_col,#selling_price_inc_gst_col').val('');
+                    $("#reportTable").hide();
+                }
+                else {
+                    $("#reportTable").show();
+                    $.ajax({
+                        url: "{% url 'get_suppliers_headers_value' %}",
+                        type: 'POST',
+                        data: {
+                            selected_value: selectedValue,
+                        },
+                        success: function (response) {
+                            if (response.status === "success") {
+                                let tbody = $('#reportTableBody');
+                                tbody.empty();
+                                response.col_map.forEach(function (item) {
+                                    console.log(item.supplier_col);
+                                    tbody.append(`
+                                                <tr>
+                                                <td>${item.supplier_col}</td>
+                                                <td>${item.date_col}</td>
+                                                <td>${item.part_description_col}</td>
+                                                <td>${item.part_number_col}</td>
+                                                <td>${item.trade_price_col}</td>
+                                                <td>${item.total_count_col}</td>
+                                                <td>${item.purchase_count_col}</td>
+                                                <td>${item.total_price_col}</td>
+                                                <td>${item.actual_price_col}</td>
+                                                </tr>
+                                            `);
+                                });
+                            } else {
+                                alert("No data found");
+                            }
+
+
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error:", xhr.responseText);
+                        }
+
+                    });
+
+
+
+
+                    $.ajax({
+                        url: "{% url 'get_suppliers_headers' %}",
+                        type: 'POST',
+                        data: {
+                            selected_value: selectedValue,
+                        },
+                        success: function (response) {
+                            const dropdowns = ['#supplier_col', '#date_col', '#part_description_col', '#part_number_col', '#trade_price_col', '#total_count_col', '#purchase_count_col', '#total_price_col', '#actual_price_col', '#profit_col', '#selling_price_exc_gst_col', '#gst_col', '#selling_price_inc_gst_col'];
+                            dropdowns.forEach(function (dropdownId) {
+                                const dropdown = $(dropdownId);
+                                dropdown.empty();
+                                dropdown.append('<option value="">--Select--</option>');
+                                response.forEach(function (fieldName) {
+                                    dropdown.append('<option value="' + fieldName + '">' + fieldName + '</option>');
+                                });
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error:", xhr.responseText);
+                        }
+                    });
+                }
+
+            });
+            // column mapping field------------------------------------------------------------------- 
+            $('#add_column_mapping').on('click', function (e) {
+                e.preventDefault();
+                const data = {
+                    supplierid: $('#column_supplier_select').val(),
+                    supplier_col: $('#supplier_col').val(),
+                    date_col: $('#date_col').val(),
+                    part_description_col: $('#part_description_col').val(),
+                    part_number_col: $('#part_number_col').val(),
+                    trade_price_col: $('#trade_price_col').val(),
+                    total_count_col: $('#total_count_col').val(),
+                    purchase_count_col: $('#purchase_count_col').val(),
+                    total_price_col: $('#total_price_col').val(),
+                    actual_price_col: $('#actual_price_col').val(),
+                    profit_col: $('#profit_col').val(),
+                    selling_price_exc_gst_col: $('#selling_price_exc_gst_col').val(),
+                    gst_col: $('#gst_col').val(),
+                    selling_price_inc_gst_col: $('#selling_price_inc_gst_col').val(),
+                };
+
+                $.ajax({
+                    url: '{% url "create_column_mapping" %}',  // Replace with your URL name
+                    type: 'POST',
+                    data: data,
+                    success: function (response) {
+                        alert('Mapping saved successfully!');
+                        console.log(response);
+                        $('#supplier_col,#date_col,#part_description_col,#part_number_col,#trade_price_col,#total_count_col,#purchase_count_col,#total_price_col,#actual_price_col,#profit_col,#selling_price_exc_gst_col,#gst_col,#selling_price_inc_gst_col').val('');
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error saving mapping.');
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            $('#add_supplier').on('click', function (e) {
+                e.preventDefault();
+                $('#add_calculations_view').hide();
+                $('#add_supplier_view').show();
+                $("#report_num_columns").hide();
+                $('#column_mapping_view').hide();
+            });
+
+            $('#add_calculations').on('click', function (e) {
+                e.preventDefault();
+                $('#add_supplier_view').hide();
+                $('#add_calculations_view').show();
+                $("#report_num_columns").show();
+                $('#column_mapping_view').hide();
+            });
+
+            $('#add_new_supplier_button').on('click', function (e) {
+                e.preventDefault();
+                console.log("Form submitted"); // check if handler runs
+                const supplierName = $('#supplier_name').val();
+                $.ajax({
+                    url: "{% url 'add_supplier' %}",
+                    type: "POST",
+                    data: {
+                        supplier_name: supplierName,
+                    },
+                    success: function (response) {
+                        alert("Supplier added successfully!");
+                        $('#supplier_name').val(''); // clear the input
+                    },
+                    error: function (xhr, status, error) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            });
+
+        });
+
+    </script>
+
+</body>
+
+</html>
