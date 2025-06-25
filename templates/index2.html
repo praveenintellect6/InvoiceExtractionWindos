@@ -231,17 +231,29 @@
         </div>
     </header>
 
+
     <div id="app">
         <div class="top-row">
-            <div class="content">
-                <label for="corr_date">choose correction date:</label><br><br>
-                <input type="date" id="corr_date" v-model="corr_date" required>
-            </div>
+          
             <div class="content">
                 <label for="excelUpload">Upload Excel Files (.xlsx only):</label><br><br>
                 <input type="file" id="excelUpload" ref="fileInput" multiple accept=".xlsx"
                     @change="handleFileUpload" />
                 <button @click="submitFiles" class="btn custom-blue">Upload </button>
+            </div>
+              <div class="content">
+                <label for="corr_date">Select Date:</label><br><br>
+                <input type="date" id="corr_date" v-model="corr_date" required>
+            </div>
+            <div class="content">
+                <form @submit.prevent="submitpdfFiles">
+                    <label for="pdfupload">Upload PDF Files (.pdf only):</label><br><br>
+                    <input type="file" id="pdfupload" multiple accept="application/pdf" @change="handlepdfFiles">
+                    <!-- <ul>
+                        <li v-for="(file, index) in pdfFiles" :key="index">[[ file.name ]]</li>
+                    </ul> -->
+                    <button type="submit"  class="btn custom-blue">Upload</button>
+                </form>
             </div>
         </div>
         <div class="row">
@@ -264,7 +276,6 @@
                 </table>
                 <br>
             </div>
-
         </div>
     </div>
 
@@ -281,6 +292,7 @@
                     invoice_list: [],
                     generate: "",
                     files: [],
+                    pdfFiles: [],
                     showTable: false,
                     corr_date: "",
                 };
@@ -291,6 +303,7 @@
             },
 
             methods: {
+                // display mails info as table----------------------------------------------------------
                 async fetchInvoiceData() {
                     this.invoice_list = [];
                     try {
@@ -302,6 +315,7 @@
                         console.error("Error fetching data:", error);
                     }
                 },
+                //uploading excelsheet option--------------------------------------------------------------
                 handleFileUpload(event) {
                     const selectedFiles = Array.from(event.target.files);
                     // Filter files by .xlsx extension only
@@ -334,6 +348,42 @@
                         console.error(error);
                     }
                 },
+                //pdf uploading option-------------------------------------------------------------------------
+                handlepdfFiles(event) {
+                    const selectedFiles = Array.from(event.target.files);
+                    // Optional: Filter only PDFs
+                    this.pdfFiles = selectedFiles.filter(file => file.type === 'application/pdf');
+                },
+                submitpdfFiles() {
+                    if (this.pdfFiles.length === 0) {
+                        alert('No PDF files selected.');
+                        return;
+                    }
+                    const formData = new FormData();
+                    this.pdfFiles.forEach((file, index) => {
+                        formData.append('files', file);
+                    });
+
+                    const baseUrl = window.location.origin;
+
+                    fetch(`${baseUrl}/uploadpdf_invoice/`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error("Upload failed");
+                            return response.json();
+                        })
+                        .then(data => {
+                            alert('PDFs uploaded successfully!');
+                            console.log(data);
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            alert('Failed to upload files.');
+                        });
+                }
+
             }
         }).mount('#app');
     </script>

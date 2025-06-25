@@ -38,6 +38,18 @@ def generated_report(request):
     return render(request,"generated_report.html")
 
 
+
+@csrf_exempt
+def uploadpdf_invoice(request):
+    if request.method == 'POST':
+        files = request.FILES.getlist('files')
+        for f in files:
+            print("filename:",f.name)
+            # with open(file_path, 'wb+') as destination:
+            #     for chunk in f.chunks():
+            #         destination.write(chunk)
+        return JsonResponse({'status': 'success'})
+
 @csrf_exempt
 def showunseen_mails(request):
     if request.method == 'GET':
@@ -106,6 +118,7 @@ def filecorrection(request):
                     John_McGrath_report=McGrathReport.objects.filter(maildate=day).values()
                     YHI_report=YhiaustraliaReport.objects.filter(maildate=day).values()
                     Repco_report=RepcoReport.objects.filter(maildate=day).values()
+
                     if Repco_report.exists():
                         print("Repco_report exist")
                         supplier_name="Repco"

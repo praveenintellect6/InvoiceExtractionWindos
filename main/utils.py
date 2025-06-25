@@ -44,7 +44,7 @@ class MailAutomationClass:
             print("Email sent successfully!")
         except Exception as e:
             print("Error:", e)                
-    
+
     @staticmethod
     def fetch_emails_on_date(target_date):
         def generate_random_3_digit():
@@ -521,8 +521,7 @@ class MailAutomationClass:
                                                 header_value = sheet.cell(row=header_row, column=col).value
                                                 if header_value:
                                                     header_map[header_value.strip()] = col
-
-                                            # ✅ Only keep columns from DataFrame that match Excel headers
+            
                                             matched_columns = [col for col in df.columns if col.strip() in header_map]
                                             print("Matched columns:", matched_columns)
                                             # Write data to Excel
@@ -1242,7 +1241,17 @@ def yhi_actualprice(report_i):
     return report_i
 
 def repco_actualprice(report_i):
-    pass
+    retail_incl_gst=report_i['retail_incl_gst']
+    print("retail_incl_gst:",retail_incl_gst)
+    try:
+        retail_incl_gst=float(retail_incl_gst.replace('%', '').replace(' ', ''))
+        actual_price=float(retail_incl_gst-(retail_incl_gst*0.0909))
+    except ValueError:
+        actual_price=0.0
+        print("report_i:",report_i)
+    report_i['actual_price']=actual_price
+    return report_i
+    
 
 
 def generatereport(report,col_map_list,case_col,supplier_name):
@@ -1250,7 +1259,7 @@ def generatereport(report,col_map_list,case_col,supplier_name):
         col_map_list=col_map_list[0]
         col_map_list.pop('id')
         for i in report:
-                do_calculation(i,col_map_list,case_col,supplier_name)
+            do_calculation(i,col_map_list,case_col,supplier_name)
     return True
                 
 
@@ -1263,6 +1272,8 @@ def do_calculation(report_i,col_map,cases,supplier_name):
         report_i=yhi_actualprice(report_i)
     elif supplier_name == "John_McGrath":
         report_i=johnmcgrath_actualprice(report_i)
+    elif supplier_name == "Repco":
+        report_i=repco_actualprice(report_i)
     
     report_i_list=list(report_i.keys())
     p_report=dict()
@@ -1271,13 +1282,8 @@ def do_calculation(report_i,col_map,cases,supplier_name):
             p_report[i.strip('_col')]=report_i[j]
     p_report['actual_price']=round(report_i['actual_price'],2)
     casedict=checkcase(p_report,cases)
-    print(casedict)
     actual_price=p_report['actual_price']
-    print("profit",casedict['profit'])
-
     profit=int(profit_fun(casedict))
-    print("profit",profit)
-
     selling_price_exc_gst=round(selling_price_exc_gst_fun(profit,actual_price),2)
     gst=round(gst_fun(casedict,selling_price_exc_gst),2)
     selling_price_inc_gst=round(selling_price_inc_gst_fun(gst,selling_price_exc_gst),2)

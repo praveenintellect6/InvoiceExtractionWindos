@@ -54,6 +54,7 @@ urlpatterns = [
     path('delete_mailed_records/',views.delete_mailed_records,name="delete_mailed_records"),
     path('filecorrection/',views.filecorrection,name="filecorrection"),
     path('showunseen_mails/', views.showunseen_mails, name="showunseen_mails"),
+    path('uploadpdf_invoice/',views.uploadpdf_invoice,name="uploadpdf_invoice"),
     ]
 
 if settings.DEBUG:
