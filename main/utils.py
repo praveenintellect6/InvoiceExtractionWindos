@@ -958,9 +958,9 @@ class Invoice_Automation:
         def pad(lst):
             return lst + [""] * (max_len - len(lst))
         df1=pd.DataFrame({
-                            # "filePath":[f'{filename}' for i  in range(len(pad(part_number)))],
-                            # "supplier":[f'{supplier_name}' for i in range(len(pad(part_number)))],
-                            # "maildate":[f'{maildata}' for i in range(len(pad(part_number)))],
+                            "filePath":[f'{filename}' for i  in range(len(pad(part_number)))],
+                            "supplier":[f'{supplier_name}' for i in range(len(pad(part_number)))],
+                            "maildate":[f'{maildata}' for i in range(len(pad(part_number)))],
                             "part_number":pad(part_number),
                             "description":pad(description),
                             "uom":pad(uom),

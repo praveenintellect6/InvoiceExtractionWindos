@@ -72,29 +72,23 @@ def filecorrection(request):
         year = str(date_obj.year)
         month = date_obj.strftime("%b")
         day = date_str
-        print("year:",year)
-        print("month:",month)
-        print("day:",day)
-        print("correction date:",correction)
-        excel_files=[]
+        #excel_files=[]
         if correction:
             if files:
                 target_folder =  os.path.join('media',str(year),str(month),str(day))
-                print("target folder:",target_folder)
-
-                print("target_folder",target_folder)
                 os.makedirs(target_folder, exist_ok=True)
                 for f in files:
                     if f.name.endswith('.xlsx'):
                         path = os.path.join(target_folder, f.name)
-                        excel_files.append(path)
+                        #excel_files.append(path)
                         print("filepath1:",path)
                         if os.path.exists(path):
                             os.remove(path)
                         with open(path, 'wb+') as destination:
                             for chunk in f.chunks():
                                 destination.write(chunk)
-                #excel_files = glob.glob(os.path.join(target_folder, "*.xlsx"))
+                excel_files = glob.glob(os.path.join(target_folder, "*.xlsx"))
+                excel_files = [f for f in excel_files if not os.path.basename(f).startswith("PurchaseReport")]
                 for f in excel_files:
                     print("list all files:",f)
                     sheets = pd.read_excel(f, engine='openpyxl',dtype=str)
@@ -111,6 +105,7 @@ def filecorrection(request):
                         PurchaseReport.objects.filter(date=day,supplier="YHI AUSTRALIA").delete()
                         PurchaseReportServices.add_DataFrame_to_YhiaustraliaReport(sheets)
                     elif sheets['supplier'].iloc[0]=="Repco":
+                        print("supplier:",sheets['supplier'].iloc[0])
                         RepcoReport.objects.filter(maildate=day).delete()
                         PurchaseReport.objects.filter(date=day, supplier="Repco").delete()
                         PurchaseReportServices.add_DataFrame_to_RepcoReport(sheets)
