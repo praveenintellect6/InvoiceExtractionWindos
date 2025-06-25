@@ -24,6 +24,7 @@ import zipfile
 from openpyxl import load_workbook
 import glob
 
+
 def remove_readonly(func, path, _):
     os.chmod(path, stat.S_IWRITE)
     func(path)
@@ -43,12 +44,263 @@ def generated_report(request):
 def uploadpdf_invoice(request):
     if request.method == 'POST':
         files = request.FILES.getlist('files')
-        for f in files:
-            print("filename:",f.name)
-            # with open(file_path, 'wb+') as destination:
-            #     for chunk in f.chunks():
-            #         destination.write(chunk)
-        return JsonResponse({'status': 'success'})
+        correction=request.POST.get('corr_date')
+        correction = datetime.strptime(correction, "%Y-%m-%d").date()
+        date_str =  correction.strftime("%y-%m-%d")
+        date_obj = datetime.strptime(date_str, "%y-%m-%d")
+        year = str(date_obj.year)
+        month = date_obj.strftime("%b")
+        day = date_str
+        print("year",year)
+        print("month",month)
+        print("day",day)
+        subject_name=dict()
+        if correction:
+            if files:
+                target_folder =  os.path.join('media',str(year),str(month),str(day))
+                os.makedirs(target_folder, exist_ok=True)
+                for f in files:
+                    filename=f"{random.randint(100, 999)}_{f.name}"
+                    print("filename:",filename)
+                    filepath = os.path.join(target_folder, filename)
+                    try:
+                        with open(filepath, 'wb+') as destination:
+                            for chunk in f.chunks():
+                                destination.write(chunk)
+                        subject_name[filename]="new pdf invoice"
+                    except Exception as save_error:
+                        print(f"Failed to save attachment {filename}: {save_error}")
+                    #file scraping begins----------------------------------------------------------------------------------------------------------                     
+                    # fileorigin = os.path.basename(full_file_path) 
+                    fileorigin=filename
+                    # fileorigin_full= os.path.join(static_base, fileorigin)
+                    fileorigin_full=filepath
+                    ttt = []
+                    mmm = []
+                    aaa=[]
+                    rrr=[]
+                    invoice_format = ''
+                    wurth_start_index=False
+                    McGrath_start_index = False
+                    value = filepath
+                    yhiaustralia_start_index=False
+                    Repco_start_index=False
+                    try:
+                        with pdfplumber.open(value) as pdf:
+                            count = 0
+                            for i, page in enumerate(pdf.pages):
+                                try:
+                                    text = page.extract_text()
+                                    if text:
+                                        # print(f"\n--- Page {i + 1} ---")
+                                        for line in text.splitlines():
+                                            if "SUA_BOS_F_DS/EUW/" in line:
+                                                invoice_format = "WURTH"
+                                            if "McGrath Canberra Pty Ltd" in line:
+                                                invoice_format = "John McGrath"
+                                            if "Aust Capital Terr Australia" in line:
+                                                invoice_format = "YHI AUSTRALIA"
+                                            if "PROVIDENT MOTORS" in line:
+                                                invoice_format = "Repco"  
+                                            count += 1
+                                            if "Delivery address Provident Motors Pty Ltd" in line:
+                                                wurth_start_index=True
+                                                continue
+                                            if "Your payment terms" in line:
+                                                wurth_start_index=False
+                                                continue
+                                            if wurth_start_index == True:
+                                                ttt.append(line)
+                                            if "Ordered B.O. Supplied" in line:
+                                                McGrath_start_index = True
+                                            if McGrath_start_index:
+                                                mmm.append(line)
+                                            if "CONDITIONS OF SALE" in line:
+                                                McGrath_start_index = False
+                                            if "S/N CODE DESCRIPTION QUANTITY UNIT PRICE AMOUNT" in line:
+                                                yhiaustralia_start_index=True
+                                                continue
+                                            if "SUBTOTAL" in line:
+                                                yhiaustralia_start_index=False
+                                                continue
+                                            if yhiaustralia_start_index ==True:
+                                                aaa.append(line)
+                                            if "INCL GST EXCL GST TOTAL" in line:
+                                                Repco_start_index=True
+                                                continue
+                                            if "PAYABLE" in line:
+                                                Repco_start_index=False
+
+                                            if Repco_start_index ==True:
+                                                rrr.append(line)
+                                    else:
+                                        print(f"\n--- Page {i + 1}: No text found ---")
+                                except Exception as e:
+                                    print(f"Error extracting text from page {i + 1}: {e}\n\n")
+                    except FileNotFoundError:
+                        print(f"The file  was not found.")                    
+                    if invoice_format == "WURTH":
+                        data = Invoice_Automation.convert_to_wurth_column(ttt, value, fileorigin_full, day,subject_name,fileorigin)
+                        invoicelist = cache.get('invoicelist')
+                        invoicedict=dict()
+                        invoicedict["mail_subject"]="wurth invoice"
+                        invoicedict["invoice_name"]=filename
+                        invoicedict["supplier"]="WURTH"
+                        # invoicedict["download_pdf"]=filename
+                        # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+                        invoicelist.append(invoicedict)
+                        cache.set('invoicelist', invoicelist)
+                        PurchaseReportServices.add_DataFrame_to_WurthReport(data)
+                    elif invoice_format == "John McGrath":
+                        data = Invoice_Automation.convert_to_McGrath_column(mmm, value, fileorigin_full, day,subject_name,fileorigin)
+                        invoicelist = cache.get('invoicelist')
+                        invoicedict=dict()
+                        invoicedict["mail_subject"]="John McGrath invoice"
+                        invoicedict["invoice_name"]=filename
+                        invoicedict["supplier"]="John McGrath"
+                        # invoicedict["download_pdf"]=filename
+                        # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+                        invoicelist.append(invoicedict)
+                        cache.set('invoicelist', invoicelist)                                          
+                        PurchaseReportServices.add_DataFrame_to_McGrathReport(data)
+                    elif invoice_format =="YHI AUSTRALIA":
+                        data=Invoice_Automation.convert_to_yhiaustralia(aaa,value,fileorigin_full,day,subject_name,fileorigin)
+                        invoicelist = cache.get('invoicelist')
+                        invoicedict=dict()
+                        invoicedict["mail_subject"]="YHI AUSTRALIA"
+                        invoicedict["invoice_name"]=filename
+                        invoicedict["supplier"]="YHI AUSTRALIA"
+                        # invoicedict["download_pdf"]=filename
+                        # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+                        invoicelist.append(invoicedict)
+                        cache.set('invoicelist', invoicelist)
+                        PurchaseReportServices.add_DataFrame_to_YhiaustraliaReport(data)
+                    elif invoice_format =="Repco":
+                        data=Invoice_Automation.convert_to_repco(rrr,value,fileorigin_full,day,subject_name,fileorigin)
+                        invoicelist = cache.get('invoicelist')
+                        invoicedict=dict()
+                        invoicedict["mail_subject"]="Repco invoice"
+                        invoicedict["invoice_name"]=filename
+                        invoicedict["supplier"]="Repco"
+                        # invoicedict["download_pdf"]=filename
+                        # invoicedict["download_excel"]=f"{filename_excel}.xlsx"
+                        invoicelist.append(invoicedict)
+                        cache.set('invoicelist', invoicelist)
+                        PurchaseReportServices.add_DataFrame_to_RepcoReport(data)
+                    else:
+                        data = None
+                    PurchaseReport.objects.filter(date=day).delete()
+                    wurth_record=WurthReport.objects.filter(maildate=day).values()
+                    John_McGrath_report=McGrathReport.objects.filter(maildate=day).values()
+                    YHI_report=YhiaustraliaReport.objects.filter(maildate=day).values()
+                    Repco_report=RepcoReport.objects.filter(maildate=day).values()
+                    if Repco_report.exists():
+                        print("Repco_report exist")
+                        supplier_name="Repco"
+                        supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                        col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                        case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                        col_map_list=[]
+                        for i in col_map:
+                            col_map_list.append(i)
+                        status=generatereport(Repco_report,col_map_list,case_col,supplier_name)
+
+                    if wurth_record.exists():
+                        print("wurth_record exist")
+                        supplier_name="wurth"
+                        supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                        col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                        case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                        col_map_list=[]
+                        for i in col_map:
+                            col_map_list.append(i)
+                        status=generatereport(wurth_record,col_map_list,case_col,supplier_name)
+
+                    if John_McGrath_report.exists():
+                        print("John_McGrath_report exist")
+                        supplier_name="John_McGrath"
+                        supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                        col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                        case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                        col_map_list=[]
+                        for i in col_map:
+                            col_map_list.append(i)
+                        status=generatereport(John_McGrath_report,col_map_list,case_col,supplier_name)
+                        print("generated:",status)
+                        
+                    if YHI_report.exists():
+                        print("YHI_report exist")
+                        supplier_name="YHI AUSTRALIA"
+                        supplier=Supplier.objects.filter(supplier_name=supplier_name).first()
+                        col_map=ColumnMapping.objects.filter(supplier_col=supplier_name).values()
+                        case_col=list(CaseModel.objects.filter(supplier=supplier).values())
+                        col_map_list=[]
+                        for i in col_map:
+                            col_map_list.append(i)
+                        status=generatereport(YHI_report,col_map_list,case_col,supplier_name)
+                    
+                    queryset=PurchaseReport.objects.filter(date=day).values()
+                    df = pd.DataFrame(list(queryset))
+                    df['profit'] = df['profit'].astype(str) + '%'
+                    df=df.rename(columns={
+                        'id':'S.NO','supplier':"Supplier",'date':'DATE','part_description':'PART DESCRIPTION','part_number':'PART NUMBER','trade_price':'TRADE PRICE',
+                        'total_count':'TOTAL COUNT','purchase_count':'PURCHASED COUNT','total_price':'TOTAL PRICE','actual_price':'ACTUAL PRICE',
+                        'profit':'PROFIT%','selling_price_exc_gst':'SELLING PRICE(Exc.GST)','gst':'GST','selling_price_inc_gst':'SELLING PRICE(Inc.GST)'
+                    })
+                    df['DATE'] = pd.to_datetime(df['DATE'], format='%y-%m-%d')
+                    df['DATE'] = df['DATE'].dt.strftime('%m-%d-%Y')
+                    df['TRADE PRICE'] = df['TRADE PRICE'].astype(float)
+                    df['TOTAL COUNT'] = df['TOTAL COUNT'].astype(float)
+                    df['PURCHASED COUNT'] = df['PURCHASED COUNT'].astype(float)
+                    df['TOTAL PRICE'] = df['TOTAL PRICE'].astype(float)
+                    df['ACTUAL PRICE'] = df['ACTUAL PRICE'].astype(float)
+                    df['SELLING PRICE(Exc.GST)'] = df['SELLING PRICE(Exc.GST)'].astype(float)
+                    df['GST'] = df['GST'].astype(float)
+                    df['SELLING PRICE(Inc.GST)'] = df['SELLING PRICE(Inc.GST)'].astype(float)
+                    file_excel_path=os.path.join(target_folder,f"PurchaseReport_{day}.xlsx")
+                    df.to_excel(file_excel_path, index=False)
+                    template_path = os.path.join("templatefile", "templatefile.xlsx")
+                    try:
+                        wb = load_workbook(template_path, data_only=True)
+                        sheet = wb.active
+                        header_row = 4
+                        data_start_row = 5
+                        header_map = {}
+                        for col in range(1, sheet.max_column + 1):
+                            header_value = sheet.cell(row=header_row, column=col).value
+                            if header_value:
+                                header_map[header_value.strip()] = col
+
+                        matched_columns = [col for col in df.columns if col.strip() in header_map]
+                        print("Matched columns:", matched_columns)
+                        # Write data to Excel
+                        for row_idx, row in df.iterrows():
+                            for col_name in matched_columns:
+                                value = row[col_name]
+                                excel_col = header_map[col_name.strip()]
+                                sheet.cell(row=data_start_row + row_idx, column=excel_col, value=value)
+                        # Save to a dynamic name
+                        output_filename = f"PurchaseReport_{day}.xlsx"
+                        output_path = os.path.join(target_folder, output_filename)
+                        wb.save(output_path)
+                        print(f"✅ Workbook saved to: {output_path}")
+                    except FileNotFoundError:
+                        print(f"❌ Template file not found: {template_path}")
+                    except Exception as e:
+                        print(f"❌ Unexpected error: {e}")
+                    # random_number = random.randint(100, 999)
+                    # file_excel_path=os.path.join(basepath,f"PurchaseReport_{day}.xlsx")
+                    # df.to_excel(file_excel_path, index=False)
+                    source_folder = rf"{target_folder}"
+                    destination = rf"\\system8\D\Oakley\praveen\{target_folder}"
+                    try:
+                        os.makedirs(os.path.dirname(destination), exist_ok=True)
+                        shutil.copytree(source_folder, destination, dirs_exist_ok=True)
+                        print("Folder copied successfully.")
+                    except Exception as e:
+                        print(f"Error copying folder: {e}")
+                return JsonResponse({'status': 'success'})
+
 
 @csrf_exempt
 def showunseen_mails(request):
@@ -59,7 +311,6 @@ def showunseen_mails(request):
             return JsonResponse({'invoice_list': data})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
 
 @csrf_exempt
 def filecorrection(request):

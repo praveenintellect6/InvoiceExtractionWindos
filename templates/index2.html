@@ -31,7 +31,7 @@
         }
 
         .content {
-            padding: 40px;
+            padding: 20px;
             text-align: center;
         }
 
@@ -234,16 +234,15 @@
 
     <div id="app">
         <div class="top-row">
-          
+            <div class="content">
+                <label for="corr_date">Select Date:</label><br><br>
+                <input type="date" id="corr_date" v-model="corr_date" required>
+            </div>
             <div class="content">
                 <label for="excelUpload">Upload Excel Files (.xlsx only):</label><br><br>
                 <input type="file" id="excelUpload" ref="fileInput" multiple accept=".xlsx"
                     @change="handleFileUpload" />
-                <button @click="submitFiles" class="btn custom-blue">Upload </button>
-            </div>
-              <div class="content">
-                <label for="corr_date">Select Date:</label><br><br>
-                <input type="date" id="corr_date" v-model="corr_date" required>
+                <button @click="submitFiles" class="btn custom-blue">Upload excel</button>
             </div>
             <div class="content">
                 <form @submit.prevent="submitpdfFiles">
@@ -252,10 +251,12 @@
                     <!-- <ul>
                         <li v-for="(file, index) in pdfFiles" :key="index">[[ file.name ]]</li>
                     </ul> -->
-                    <button type="submit"  class="btn custom-blue">Upload</button>
+                    <button type="submit" class="btn custom-blue">Upload pdf</button>
                 </form>
             </div>
         </div>
+
+
         <div class="row">
             <div class="content">
                 <table v-if="invoice_list && invoice_list.length">
@@ -360,9 +361,11 @@
                         return;
                     }
                     const formData = new FormData();
+
                     this.pdfFiles.forEach((file, index) => {
                         formData.append('files', file);
                     });
+                    formData.append('corr_date', this.corr_date)
 
                     const baseUrl = window.location.origin;
 
